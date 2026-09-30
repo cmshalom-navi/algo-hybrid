@@ -20,16 +20,21 @@ services/
 domain/         Shared, AWS-free: Pydantic schemas, request->model mapping,
                 solver logic. Unit-testable in isolation.
 infra/          Infrastructure as code (CDK/Terraform) for AWS resources.
-docker/         Dockerfiles for the api and worker images.
+docker/         Dockerfiles for the api and worker images, and
+                docker-compose.yml for the local dev stack (LocalStack for
+                SQS/DynamoDB/S3).
 tests/          Test suite (unit, and integration against the local stack).
-docker-compose.yml   Local dev stack (LocalStack for SQS/DynamoDB/S3).
 ```
 
 ## Local development
 
 ```
+cp .env.example .env   # first time only; fill in LOCALSTACK_AUTH_TOKEN
 docker compose up
 ```
+
+Run from the repo root: `.env` sets `COMPOSE_FILE` to
+`docker/docker-compose.yml`.
 
 This starts the API, worker, and a LocalStack instance emulating SQS,
 DynamoDB, and S3, so the same code path runs locally and in deployed

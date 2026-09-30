@@ -1,5 +1,9 @@
 """Create the S3 bucket, DynamoDB table, and SQS queue used by the toy
-service, for local development against LocalStack or a moto server.
+service, for local development against LocalStack.
+
+Runs as the `bootstrap` service in docker/docker-compose.yml before the api
+and worker start. It is idempotent: resources that already exist are left
+as-is, so `docker compose run --rm bootstrap` can be used to re-create them.
 
 In real AWS environments these resources are created by the infra/ IaC,
 not by application code -- this script only exists for local bootstrapping.

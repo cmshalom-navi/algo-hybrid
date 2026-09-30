@@ -1,3 +1,7 @@
+# Run `docker compose up` from the repo root; the root .env sets
+# COMPOSE_FILE to this file.
+name: algo-hybrid
+
 services:
   localstack:
     image: localstack/localstack
@@ -12,7 +16,7 @@ services:
 
   bootstrap:
     build:
-      context: .
+      context: ..
       dockerfile: docker/worker.Dockerfile
     environment:
       - AWS_ENDPOINT_URL=http://localstack:4566
@@ -26,7 +30,7 @@ services:
 
   api:
     build:
-      context: .
+      context: ..
       dockerfile: docker/api.Dockerfile
     environment:
       - AWS_ENDPOINT_URL=http://localstack:4566
@@ -43,7 +47,7 @@ services:
 
   worker:
     build:
-      context: .
+      context: ..
       dockerfile: docker/worker.Dockerfile
     environment:
       - AWS_ENDPOINT_URL=http://localstack:4566
