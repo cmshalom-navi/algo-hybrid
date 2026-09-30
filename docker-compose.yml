@@ -3,8 +3,26 @@ services:
     image: localstack/localstack
     environment:
       - SERVICES=sqs,dynamodb,s3
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+      - PERSISTENCE=1
     ports:
       - "4566:4566"
+    volumes:
+      - localstack_data:/var/lib/localstack
+
+  bootstrap:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    environment:
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    command: ["python", "bootstrap_local.py"]
+    depends_on:
+      localstack:
+        condition: service_healthy
 
   api:
     build:
@@ -16,9 +34,12 @@ services:
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
     ports:
-      - "8000:8000"
+      - "8080:8000"
     depends_on:
-      - localstack
+      localstack:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
 
   worker:
     build:
@@ -30,4 +51,11 @@ services:
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
     depends_on:
-      - localstack
+      localstack:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+    restart: on-failure
+
+volumes:
+  localstack_data:

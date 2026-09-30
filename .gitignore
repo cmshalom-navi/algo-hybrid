@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.python-version
+
+# Testing / tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Docker / logs
+*.log
+
+# IaC
+infra/cdk.out/
+infra/.terraform/
+*.tfstate
+*.tfstate.*
+
+# Editors / OS
+.vscode/*
+!.vscode/launch.json
+.idea/
+.DS_Store

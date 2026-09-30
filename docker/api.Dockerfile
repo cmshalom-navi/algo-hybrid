@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY pyproject.toml ./
 COPY domain ./domain
+COPY common ./common
 COPY services/api ./services/api
 
 RUN pip install --no-cache-dir .

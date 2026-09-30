@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "client_demo.py (against stack)",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "program": "${workspaceFolder}/client_demo.py",
+            "args": ["${input:paramA}", "${input:paramB}", "http://127.0.0.1:8080"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "paramA",
+            "type": "promptString",
+            "description": "Value for a",
+            "default": "-1"
+        },
+        {
+            "id": "paramB",
+            "type": "promptString",
+            "description": "Value for b",
+            "default": "1"
+        }
+    ]
+}
