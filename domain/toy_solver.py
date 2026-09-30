@@ -5,13 +5,22 @@ subject to x + y >= 1
            x - y >= 1
 """
 
-from dataclasses import dataclass
+import dataclasses
 
 from ortools.linear_solver import pywraplp
 
 
-@dataclass
+@dataclasses.dataclass
 class Solution:
+    """Outcome of a solve.
+
+    Attributes:
+        status: Solver status, e.g. "OPTIMAL" or "UNBOUNDED".
+        x: Optimal value of x, if an optimum was found.
+        y: Optimal value of y, if an optimum was found.
+        objective: Optimal objective value, if an optimum was found.
+    """
+
     status: str
     x: float | None = None
     y: float | None = None
@@ -19,6 +28,18 @@ class Solution:
 
 
 def solve(a: float, b: float) -> Solution:
+    """Solves the toy LP for the given objective coefficients.
+
+    Args:
+        a: Objective coefficient of x.
+        b: Objective coefficient of y.
+
+    Returns:
+        The solution, with values set only when the status is OPTIMAL.
+
+    Raises:
+        RuntimeError: If the GLOP solver is unavailable.
+    """
     solver = pywraplp.Solver.CreateSolver("GLOP")
     if solver is None:
         raise RuntimeError("GLOP solver unavailable")
@@ -35,7 +56,12 @@ def solve(a: float, b: float) -> Solution:
     status = solver.Solve()
 
     if status == pywraplp.Solver.OPTIMAL:
-        return Solution("OPTIMAL", x.solution_value(), y.solution_value(), solver.Objective().Value())
+        return Solution(
+            "OPTIMAL",
+            x.solution_value(),
+            y.solution_value(),
+            solver.Objective().Value(),
+        )
     if status == pywraplp.Solver.UNBOUNDED:
         return Solution("UNBOUNDED")
     if status == pywraplp.Solver.INFEASIBLE:
@@ -48,7 +74,12 @@ def solve(a: float, b: float) -> Solution:
     return Solution("UNKNOWN")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Solves a few sample objectives and prints the results."""
     for a, b in [(1, 1), (1, -1), (-1, 1), (-1, -2)]:
         result = solve(a, b)
         print(f"a={a}, b={b} -> {result}")
+
+
+if __name__ == "__main__":
+    main()

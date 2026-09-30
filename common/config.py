@@ -1,3 +1,5 @@
+"""Environment-driven configuration shared by the api and worker services."""
+
 import os
 
 AWS_ENDPOINT_URL = os.environ.get("AWS_ENDPOINT_URL")

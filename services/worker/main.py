@@ -1,13 +1,24 @@
+"""Worker that pulls jobs from SQS, solves them, and records the results."""
+
 import json
+import logging
 import time
+from typing import Any
 
 import botocore.exceptions
 
 from common import job_store
-from domain.toy_solver import solve
+from domain import toy_solver
 
 
-def process_message(body: dict) -> None:
+def process_message(body: dict[str, Any]) -> None:
+    """Solves the job a queue message points to and records the outcome.
+
+    Messages for unknown jobs are ignored.
+
+    Args:
+        body: Decoded message body; must contain "job_id".
+    """
     job_id = body["job_id"]
     item = job_store.get_job(job_id)
     if item is None:
@@ -16,7 +27,7 @@ def process_message(body: dict) -> None:
     job_store.mark_running(job_id)
     try:
         request = job_store.get_request(item["request_s3_key"])
-        result = solve(request["a"], request["b"])
+        result = toy_solver.solve(request["a"], request["b"])
         job_store.mark_succeeded(
             job_id,
             {
@@ -26,12 +37,19 @@ def process_message(body: dict) -> None:
                 "objective": result.objective,
             },
         )
-    except Exception as exc:
+    # Isolation point: any failure is recorded on the job instead of
+    # crashing the worker loop.
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        logging.exception("job %s failed", job_id)
         job_store.mark_failed(job_id, str(exc))
 
 
 def run_once() -> int:
-    """Poll SQS once and process whatever is available. Returns count processed."""
+    """Polls SQS once and processes whatever is available.
+
+    Returns:
+        The number of messages processed.
+    """
     messages = job_store.receive_jobs()
     for message in messages:
         process_message(json.loads(message["Body"]))
@@ -39,11 +57,22 @@ def run_once() -> int:
     return len(messages)
 
 
-def wait_for_queue(max_wait_seconds: float = 60.0, retry_interval_seconds: float = 2.0) -> None:
-    """Retry until the SQS queue is reachable, instead of crashing on startup
-    if the infra (queue/table/bucket) isn't created yet -- e.g. the worker
-    container starts before the queue exists, or LocalStack is still coming
-    up.
+def wait_for_queue(
+    max_wait_seconds: float = 60.0, retry_interval_seconds: float = 2.0
+) -> None:
+    """Blocks until the SQS queue is reachable.
+
+    Retrying avoids crashing on startup if the infra (queue/table/bucket)
+    isn't created yet -- e.g. the worker container starts before the queue
+    exists, or LocalStack is still coming up.
+
+    Args:
+        max_wait_seconds: How long to keep retrying.
+        retry_interval_seconds: Delay between attempts.
+
+    Raises:
+        RuntimeError: If the queue is still unreachable after
+            `max_wait_seconds`.
     """
     deadline = time.monotonic() + max_wait_seconds
     last_error: botocore.exceptions.ClientError | None = None
@@ -53,19 +82,26 @@ def wait_for_queue(max_wait_seconds: float = 60.0, retry_interval_seconds: float
             return
         except botocore.exceptions.ClientError as exc:
             last_error = exc
-            print(f"queue not ready yet ({exc}), retrying...")
+            logging.warning("queue not ready yet (%s), retrying...", exc)
             time.sleep(retry_interval_seconds)
-    raise RuntimeError(f"queue not reachable after {max_wait_seconds}s") from last_error
+    raise RuntimeError(
+        f"queue not reachable after {max_wait_seconds}s"
+    ) from last_error
 
 
 def run_forever(idle_sleep_seconds: float = 1.0) -> None:
+    """Runs the worker loop until the process is stopped.
+
+    Args:
+        idle_sleep_seconds: Delay after an empty or failed poll.
+    """
     wait_for_queue()
-    print("worker started, polling for jobs...")
+    logging.info("worker started, polling for jobs...")
     while True:
         try:
             processed = run_once()
         except botocore.exceptions.ClientError as exc:
-            print(f"poll failed ({exc}), retrying...")
+            logging.warning("poll failed (%s), retrying...", exc)
             time.sleep(idle_sleep_seconds)
             continue
         if processed == 0:
@@ -73,4 +109,5 @@ def run_forever(idle_sleep_seconds: float = 1.0) -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     run_forever()

@@ -15,7 +15,12 @@ from common import config
 
 
 def main() -> None:
-    sqs = boto3.client("sqs", endpoint_url=config.AWS_ENDPOINT_URL, region_name=config.AWS_REGION)
+    """Purges the jobs queue."""
+    sqs = boto3.client(
+        "sqs",
+        endpoint_url=config.AWS_ENDPOINT_URL,
+        region_name=config.AWS_REGION,
+    )
     queue_url = sqs.get_queue_url(QueueName=config.JOBS_QUEUE)["QueueUrl"]
     sqs.purge_queue(QueueUrl=queue_url)
     print(f"purged queue {config.JOBS_QUEUE}")

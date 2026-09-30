@@ -20,7 +20,20 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 80
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, isort, pydocstyle, pep8-naming, type annotations.
+select = ["E", "F", "I", "D", "N", "ANN"]
+# The Google guide permits Any and doesn't require docstrings in empty
+# __init__.py files.
+ignore = ["ANN401", "D104"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["domain", "services", "common"]
