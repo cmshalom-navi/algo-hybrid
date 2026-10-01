@@ -11,7 +11,7 @@ dependencies = [
     "ortools",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest",
     "moto",
@@ -34,6 +34,14 @@ convention = "google"
 
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
+
+[tool.mypy]
+python_version = "3.11"
+
+# These libraries ship without type stubs or a py.typed marker.
+[[tool.mypy.overrides]]
+module = ["boto3", "boto3.*", "botocore", "botocore.*", "ortools.*"]
+ignore_missing_imports = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["domain", "services", "common"]

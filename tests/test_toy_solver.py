@@ -43,6 +43,7 @@ def test_degenerate_optimum_has_correct_objective(a: float, b: float) -> None:
     result = toy_solver.solve(a, b)
 
     assert result.status == "OPTIMAL"
+    assert result.x is not None and result.y is not None
     _assert_feasible(result.x, result.y)
     assert result.objective == pytest.approx(a, abs=_TOL)
     assert a * result.x + b * result.y == pytest.approx(
