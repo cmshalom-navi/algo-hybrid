@@ -47,7 +47,7 @@ module = ["boto3", "boto3.*", "botocore", "botocore.*", "ortools.*"]
 ignore_missing_imports = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["domain", "services", "common"]
+packages = ["domain", "services", "common", "clients"]
 
 [build-system]
 requires = ["hatchling"]
