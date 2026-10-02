@@ -3,7 +3,7 @@
 Submits a job with parameters a, b and polls until it finishes.
 
 Usage:
-    python client_demo.py [a] [b] [base_url]
+    python clients/toy_demo.py [a] [b] [base_url]
 """
 
 import json
@@ -11,6 +11,8 @@ import sys
 import time
 from typing import Any
 import urllib.request
+
+from common import models
 
 # Kept local rather than imported from common.job_store so this client has
 # no boto3 dependency.
@@ -31,18 +33,17 @@ def _request(
         return json.loads(response.read())
 
 
-def submit(a: float, b: float, base_url: str) -> str:
+def submit(instance: models.ToyInstance, base_url: str) -> str:
     """Submits a new job to the API.
 
     Args:
-        a: Objective coefficient of x.
-        b: Objective coefficient of y.
+        instance: The problem to solve.
         base_url: Base URL of the API service.
 
     Returns:
         The ID of the created job.
     """
-    created = _request("POST", f"{base_url}/jobs", {"a": a, "b": b})
+    created = _request("POST", f"{base_url}/jobs", instance.model_dump())
     print(f"submitted job {created['job_id']} (status={created['status']})")
     return created["job_id"]
 
@@ -82,7 +83,7 @@ def main() -> None:
     b = float(sys.argv[2]) if len(sys.argv) > 2 else 1.0
     base_url = sys.argv[3] if len(sys.argv) > 3 else "http://127.0.0.1:8000"
 
-    job_id = submit(a, b, base_url)
+    job_id = submit(models.ToyInstance(a=a, b=b), base_url)
     print(poll(job_id, base_url))
 
 

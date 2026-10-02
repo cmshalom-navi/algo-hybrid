@@ -5,34 +5,16 @@ subject to x + y >= 1
            x - y >= 1
 """
 
-import dataclasses
-
 from ortools.linear_solver import pywraplp
 
-
-@dataclasses.dataclass
-class Solution:
-    """Outcome of a solve.
-
-    Attributes:
-        status: Solver status, e.g. "OPTIMAL" or "UNBOUNDED".
-        x: Optimal value of x, if an optimum was found.
-        y: Optimal value of y, if an optimum was found.
-        objective: Optimal objective value, if an optimum was found.
-    """
-
-    status: str
-    x: float | None = None
-    y: float | None = None
-    objective: float | None = None
+from common import models
 
 
-def solve(a: float, b: float) -> Solution:
+def solve(request: models.ToyInstance) -> models.ToySolution:
     """Solves the toy LP for the given objective coefficients.
 
     Args:
-        a: Objective coefficient of x.
-        b: Objective coefficient of y.
+        request: The problem parameters.
 
     Returns:
         The solution, with values set only when the status is OPTIMAL.
@@ -51,35 +33,24 @@ def solve(a: float, b: float) -> Solution:
     solver.Add(x + y >= 1)
     solver.Add(x - y >= 1)
 
-    solver.Maximize(a * x + b * y)
+    solver.Maximize(request.a * x + request.b * y)
 
     status = solver.Solve()
 
     if status == pywraplp.Solver.OPTIMAL:
-        return Solution(
-            "OPTIMAL",
-            x.solution_value(),
-            y.solution_value(),
-            solver.Objective().Value(),
+        return models.ToySolution(
+            status="OPTIMAL",
+            x=x.solution_value(),
+            y=y.solution_value(),
+            objective=solver.Objective().Value(),
         )
     if status == pywraplp.Solver.UNBOUNDED:
-        return Solution("UNBOUNDED")
+        return models.ToySolution(status="UNBOUNDED")
     if status == pywraplp.Solver.INFEASIBLE:
         # NOTE: with x and y left unbounded (-inf, inf), GLOP reports
         # INFEASIBLE for problems that are actually UNBOUNDED (the feasible
         # region x+y>=1, x-y>=1 is never empty). Treat INFEASIBLE here as
         # "infeasible or unbounded" and, if that distinction matters,
         # re-check with finite variable bounds.
-        return Solution("INFEASIBLE_OR_UNBOUNDED")
-    return Solution("UNKNOWN")
-
-
-def main() -> None:
-    """Solves a few sample objectives and prints the results."""
-    for a, b in [(1, 1), (1, -1), (-1, 1), (-1, -2)]:
-        result = solve(a, b)
-        print(f"a={a}, b={b} -> {result}")
-
-
-if __name__ == "__main__":
-    main()
+        return models.ToySolution(status="INFEASIBLE_OR_UNBOUNDED")
+    return models.ToySolution(status="UNKNOWN")
