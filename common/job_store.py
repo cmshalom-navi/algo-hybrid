@@ -16,6 +16,7 @@ from typing import Any
 import uuid
 
 import boto3
+import pydantic
 
 from common import config
 from common import models
@@ -76,11 +77,11 @@ def _decimals_to_floats(value: Any) -> Any:
     return value
 
 
-def create_job(request: models.ToyInstance) -> str:
+def create_job(request: pydantic.BaseModel) -> str:
     """Stores a new job request and enqueues it for the worker.
 
     Args:
-        request: The problem parameters.
+        request: The problem parameters, as any pydantic model.
 
     Returns:
         The ID of the newly created job.
