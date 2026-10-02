@@ -27,16 +27,7 @@ def process_message(body: dict[str, Any]) -> None:
     job_store.mark_running(job_id)
     try:
         request = job_store.get_request(item["request_s3_key"])
-        result = toy_solver.solve(request["a"], request["b"])
-        job_store.mark_succeeded(
-            job_id,
-            {
-                "status": result.status,
-                "x": result.x,
-                "y": result.y,
-                "objective": result.objective,
-            },
-        )
+        job_store.mark_succeeded(job_id, toy_solver.solve(request))
     # Isolation point: any failure is recorded on the job instead of
     # crashing the worker loop.
     except Exception as exc:  # pylint: disable=broad-exception-caught

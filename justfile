@@ -85,4 +85,4 @@ worker:
 
 # Submit a demo job and poll it (default URL is the compose api).
 demo a="-1" b="1" url="http://127.0.0.1:8080":
-    uv run python client_demo.py {{ a }} {{ b }} {{ url }}
+    uv run python clients/toy_demo.py {{ a }} {{ b }} {{ url }}

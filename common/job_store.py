@@ -18,6 +18,7 @@ import uuid
 import boto3
 
 from common import config
+from common import models
 
 STATUS_QUEUED = "QUEUED"
 STATUS_RUNNING = "RUNNING"
@@ -75,12 +76,11 @@ def _decimals_to_floats(value: Any) -> Any:
     return value
 
 
-def create_job(a: float, b: float) -> str:
+def create_job(request: models.ToyInstance) -> str:
     """Stores a new job request and enqueues it for the worker.
 
     Args:
-        a: Objective coefficient of x.
-        b: Objective coefficient of y.
+        request: The problem parameters.
 
     Returns:
         The ID of the newly created job.
@@ -91,7 +91,7 @@ def create_job(a: float, b: float) -> str:
     _s3().put_object(
         Bucket=config.JOBS_BUCKET,
         Key=request_key,
-        Body=json.dumps({"a": a, "b": b}).encode(),
+        Body=request.model_dump_json().encode(),
         ContentType="application/json",
     )
 
@@ -128,17 +128,21 @@ def get_job(job_id: str) -> dict[str, Any] | None:
     return _decimals_to_floats(item) if item is not None else None
 
 
-def get_request(request_s3_key: str) -> dict[str, Any]:
+def get_request(request_s3_key: str) -> models.ToyInstance:
     """Fetches a job's request payload from S3.
 
     Args:
         request_s3_key: S3 key of the request, as stored in the job record.
 
     Returns:
-        The decoded request payload.
+        The decoded request.
+
+    Raises:
+        pydantic.ValidationError: If the stored payload is not a valid
+            request.
     """
     obj = _s3().get_object(Bucket=config.JOBS_BUCKET, Key=request_s3_key)
-    return json.loads(obj["Body"].read())
+    return models.ToyInstance.model_validate_json(obj["Body"].read())
 
 
 def receive_jobs(
@@ -184,12 +188,12 @@ def mark_running(job_id: str) -> None:
     )
 
 
-def mark_succeeded(job_id: str, result: dict[str, Any]) -> None:
+def mark_succeeded(job_id: str, solution: models.ToySolution) -> None:
     """Sets a job's status to SUCCEEDED and stores its result.
 
     Args:
         job_id: ID of the job to update.
-        result: Result payload to store with the job.
+        solution: Solver output to store as the job's result.
     """
     _table().update_item(
         Key={"job_id": job_id},
@@ -197,7 +201,7 @@ def mark_succeeded(job_id: str, result: dict[str, Any]) -> None:
         ExpressionAttributeNames={"#status": "status", "#result": "result"},
         ExpressionAttributeValues={
             ":status": STATUS_SUCCEEDED,
-            ":result": _floats_to_decimals(result),
+            ":result": _floats_to_decimals(solution.model_dump()),
         },
     )
 

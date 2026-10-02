@@ -1,25 +1,12 @@
 """HTTP API for submitting solve jobs and polling their status."""
 
-from typing import Any
-
 import fastapi
 import pydantic
 
 from common import job_store
+from common import models
 
 app = fastapi.FastAPI()
-
-
-class SolveRequest(pydantic.BaseModel):
-    """Request body for creating a job.
-
-    Attributes:
-        a: Objective coefficient of x.
-        b: Objective coefficient of y.
-    """
-
-    a: float
-    b: float
 
 
 class JobCreated(pydantic.BaseModel):
@@ -40,18 +27,18 @@ class JobStatus(pydantic.BaseModel):
     Attributes:
         job_id: ID of the job.
         status: One of QUEUED, RUNNING, SUCCEEDED or FAILED.
-        result: Solver result, once the job has succeeded.
+        result: Solver output, once the job has succeeded.
         error: Error message, if the job has failed.
     """
 
     job_id: str
     status: str
-    result: dict[str, Any] | None = None
+    result: models.ToySolution | None = None
     error: str | None = None
 
 
 @app.post("/jobs", response_model=JobCreated, status_code=202)
-def create_job(request: SolveRequest) -> JobCreated:
+def create_job(request: models.ToyInstance) -> JobCreated:
     """Accepts a solve request and queues it for the worker.
 
     Args:
@@ -60,7 +47,7 @@ def create_job(request: SolveRequest) -> JobCreated:
     Returns:
         The ID and initial status of the new job.
     """
-    job_id = job_store.create_job(request.a, request.b)
+    job_id = job_store.create_job(request)
     return JobCreated(job_id=job_id, status=job_store.STATUS_QUEUED)
 
 
