@@ -9,6 +9,8 @@ dependencies = [
     "pydantic>=2",
     "boto3",
     "ortools",
+    "sqlalchemy>=2",
+    "psycopg[binary]>=3",
 ]
 
 [dependency-groups]

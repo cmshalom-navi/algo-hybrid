@@ -72,6 +72,10 @@ bootstrap:
 purge:
     {{ local_env }} uv run python purge_queue.py
 
+# Create the Postgres database and tables if missing (settings in .env).
+create-tables:
+    uv run --env-file .env python create_tables.py
+
 # --- Running programs on the host -------------------------------------------
 
 # Run the API on the host with autoreload (needs `just localstack`).
