@@ -20,6 +20,11 @@ dev = [
     "ruff",
     "mypy",
 ]
+viz = [
+    "matplotlib>=3.11.2",
+    "networkx>=3.6.1",
+    "pyvis>=0.3.2",
+]
 
 [tool.ruff]
 line-length = 80
