@@ -19,7 +19,17 @@ dev = [
     "moto",
     "ruff",
     "mypy",
+    "types-networkx",
 ]
+viz = [
+    "matplotlib>=3.11.2",
+    "networkx>=3.6.1",
+    "pyvis>=0.3.2",
+]
+
+[tool.uv]
+# CI type-checks bom_graph.py, so it needs the viz group too.
+default-groups = ["dev", "viz"]
 
 [tool.ruff]
 line-length = 80
@@ -45,7 +55,15 @@ python_version = "3.11"
 
 # These libraries ship without type stubs or a py.typed marker.
 [[tool.mypy.overrides]]
-module = ["boto3", "boto3.*", "botocore", "botocore.*", "ortools.*"]
+module = [
+    "boto3",
+    "boto3.*",
+    "botocore",
+    "botocore.*",
+    "ortools.*",
+    "pyvis",
+    "pyvis.*",
+]
 ignore_missing_imports = true
 
 [tool.hatch.build.targets.wheel]
