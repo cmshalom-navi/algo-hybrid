@@ -27,13 +27,14 @@ from matplotlib import pyplot  # noqa: E402
 import networkx  # noqa: E402
 from pyvis import network  # noqa: E402
 
-from common import models  # noqa: E402
+from common import cdm  # noqa: E402
+from domain import models  # noqa: E402
 import test_data  # noqa: E402
 
 _COLORS = {
-    models.ItemType.RAW: "#8fbc8f",
-    models.ItemType.SEMI_FINISHED: "#87ceeb",
-    models.ItemType.FINISHED: "#f4a460",
+    cdm.ItemType.RAW: "#8fbc8f",
+    cdm.ItemType.SEMI_FINISHED: "#87ceeb",
+    cdm.ItemType.FINISHED: "#f4a460",
 }
 # Color of the nodes whose item has an item type missing from _COLORS.
 _DEFAULT_COLOR = "#d3d3d3"
@@ -44,7 +45,7 @@ _OPERATION_SHAPE = "ellipse"
 _PNG_SHAPES = {_ITEM_SHAPE: ("s", 1400), _OPERATION_SHAPE: ("o", 2400)}
 
 # A node of a graph returned by `build_graph`.
-_Node = models.Operation | models.Item | models.OperationMaterial
+_Node = models.Operation | cdm.Item | models.OperationMaterial
 
 
 def build_graph(

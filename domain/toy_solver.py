@@ -7,10 +7,10 @@ subject to x + y >= 1
 
 from ortools.linear_solver import pywraplp
 
-from common import models
+from common import toy_models
 
 
-def solve(request: models.ToyInstance) -> models.ToySolution:
+def solve(request: toy_models.ToyInstance) -> toy_models.ToySolution:
     """Solves the toy LP for the given objective coefficients.
 
     Args:
@@ -38,19 +38,19 @@ def solve(request: models.ToyInstance) -> models.ToySolution:
     status = solver.Solve()
 
     if status == pywraplp.Solver.OPTIMAL:
-        return models.ToySolution(
+        return toy_models.ToySolution(
             status="OPTIMAL",
             x=x.solution_value(),
             y=y.solution_value(),
             objective=solver.Objective().Value(),
         )
     if status == pywraplp.Solver.UNBOUNDED:
-        return models.ToySolution(status="UNBOUNDED")
+        return toy_models.ToySolution(status="UNBOUNDED")
     if status == pywraplp.Solver.INFEASIBLE:
         # NOTE: with x and y left unbounded (-inf, inf), GLOP reports
         # INFEASIBLE for problems that are actually UNBOUNDED (the feasible
         # region x+y>=1, x-y>=1 is never empty). Treat INFEASIBLE here as
         # "infeasible or unbounded" and, if that distinction matters,
         # re-check with finite variable bounds.
-        return models.ToySolution(status="INFEASIBLE_OR_UNBOUNDED")
-    return models.ToySolution(status="UNKNOWN")
+        return toy_models.ToySolution(status="INFEASIBLE_OR_UNBOUNDED")
+    return toy_models.ToySolution(status="UNKNOWN")

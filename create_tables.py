@@ -2,14 +2,14 @@
 
 Connects with the POSTGRES_* settings in common.config. Creates the
 database itself first if it doesn't exist, then the tables and enum types
-of common.models. Existing tables are left untouched, so this is safe to
+of common.cdm. Existing tables are left untouched, so this is safe to
 re-run, but it does not migrate tables whose models have changed.
 """
 
 import sqlalchemy as sa
 
+from common import cdm
 from common import config
-from common import models
 
 
 def _url(database: str) -> sa.URL:
@@ -50,9 +50,9 @@ def main() -> None:
     """Creates the database and its tables."""
     _create_database()
     engine = sa.create_engine(_url(config.POSTGRES_DB))
-    models.Base.metadata.create_all(engine)
+    cdm.Base.metadata.create_all(engine)
     engine.dispose()
-    tables = ", ".join(models.Base.metadata.tables)
+    tables = ", ".join(cdm.Base.metadata.tables)
     print(f"tables in {config.POSTGRES_DB}: {tables}")
 
 

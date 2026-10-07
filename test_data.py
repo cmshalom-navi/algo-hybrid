@@ -17,14 +17,14 @@ import itertools
 import random
 import uuid
 
-from common import models
+from common import cdm
 
 NUM_BOMS = 10
 NUM_RAW_ITEMS = 6
 TENANT_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 
-def _item(code: str, item_type: models.ItemType, uom: str) -> models.Item:
+def _item(code: str, item_type: cdm.ItemType, uom: str) -> cdm.Item:
     """Returns a new item of the test tenant.
 
     Args:
@@ -35,21 +35,21 @@ def _item(code: str, item_type: models.ItemType, uom: str) -> models.Item:
     Returns:
         The item.
     """
-    return models.Item(
+    return cdm.Item(
         item_id=uuid.uuid4(),
         tenant_id=TENANT_ID,
         code=code,
         name=f"Item {code}",
         item_type=item_type,
         base_uom=uom,
-        is_sellable=item_type == models.ItemType.FINISHED,
-        is_purchasable=item_type == models.ItemType.RAW,
+        is_sellable=item_type == cdm.ItemType.FINISHED,
+        is_purchasable=item_type == cdm.ItemType.RAW,
         is_lot_tracked=False,
         is_active=True,
     )
 
 
-def create_test_data(seed: int = 0) -> list[models.Bom]:
+def create_test_data(seed: int = 0) -> list[cdm.Bom]:
     """Creates NUM_BOMS BOMs together with all the items they reference.
 
     The objects are transient (not attached to a session) and have their
@@ -66,12 +66,12 @@ def create_test_data(seed: int = 0) -> list[models.Bom]:
     """
     rng = random.Random(seed)
     raw_items = [
-        _item(f"RAW-{i:02d}", models.ItemType.RAW, "kg")
+        _item(f"RAW-{i:02d}", cdm.ItemType.RAW, "kg")
         for i in range(1, NUM_RAW_ITEMS + 1)
     ]
     # The type is set below, once it is known which items are consumed.
     output_items = [
-        _item(f"PROD-{i:02d}", models.ItemType.FINISHED, "ea")
+        _item(f"PROD-{i:02d}", cdm.ItemType.FINISHED, "ea")
         for i in range(1, NUM_BOMS + 1)
     ]
     # Hand out raw items round-robin so that each is used at least once.
@@ -79,7 +79,7 @@ def create_test_data(seed: int = 0) -> list[models.Bom]:
 
     boms = []
     for i, output_item in enumerate(output_items):
-        bom = models.Bom(
+        bom = cdm.Bom(
             bom_id=uuid.uuid4(),
             tenant_id=TENANT_ID,
             primary_item_id=output_item.item_id,
@@ -90,13 +90,13 @@ def create_test_data(seed: int = 0) -> list[models.Bom]:
             is_active=True,
         )
         bom.outputs.append(
-            models.BomOutput(
+            cdm.BomOutput(
                 bom_output_id=uuid.uuid4(),
                 tenant_id=TENANT_ID,
                 bom_id=bom.bom_id,
                 item_id=output_item.item_id,
                 item=output_item,
-                role=models.BomOutputRole.PRIMARY,
+                role=cdm.BomOutputRole.PRIMARY,
                 qty=bom.base_qty,
                 uom=bom.base_uom,
             )
@@ -115,7 +115,7 @@ def create_test_data(seed: int = 0) -> list[models.Bom]:
         ]
         for line_no, item in enumerate(consumed_items, start=1):
             bom.components.append(
-                models.BomComponent(
+                cdm.BomComponent(
                     bom_component_id=uuid.uuid4(),
                     tenant_id=TENANT_ID,
                     bom_id=bom.bom_id,
@@ -131,7 +131,7 @@ def create_test_data(seed: int = 0) -> list[models.Bom]:
     consumed_ids = {c.item_id for bom in boms for c in bom.components}
     for item in output_items:
         if item.item_id in consumed_ids:
-            item.item_type = models.ItemType.SEMI_FINISHED
+            item.item_type = cdm.ItemType.SEMI_FINISHED
             item.is_sellable = False
     return boms
 

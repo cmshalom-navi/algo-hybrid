@@ -12,7 +12,7 @@ import urllib.request
 import pytest
 
 from clients import request
-from common import models
+from common import toy_models
 
 _BASE_URL = "http://api.test"
 _JOB_URL = f"{_BASE_URL}/jobs/job-1"
@@ -50,7 +50,7 @@ def _submit(
 ) -> request.Request:
     """Creates a Request, queueing `job_payloads` as later GET responses."""
     urlopen.side_effect = [_response(p) for p in (_CREATED, *job_payloads)]
-    return request.Request(models.ToyInstance(a=-1, b=0.5), _BASE_URL)
+    return request.Request(toy_models.ToyInstance(a=-1, b=0.5), _BASE_URL)
 
 
 def test_init_posts_instance(urlopen: mock.MagicMock) -> None:

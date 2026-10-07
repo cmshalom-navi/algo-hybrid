@@ -9,7 +9,7 @@ Usage:
 import sys
 
 from clients import request
-from common import models
+from common import toy_models
 
 
 def main() -> None:
@@ -18,7 +18,7 @@ def main() -> None:
     b = float(sys.argv[2]) if len(sys.argv) > 2 else 1.0
     base_url = sys.argv[3] if len(sys.argv) > 3 else "http://127.0.0.1:8000"
 
-    job = request.Request(models.ToyInstance(a=a, b=b), base_url)
+    job = request.Request(toy_models.ToyInstance(a=a, b=b), base_url)
     print(f"submitted job {job.job_id} (status={job.status})")
     print(job.poll())
 

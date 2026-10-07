@@ -1,49 +1,17 @@
-"""Data models shared by the api, the worker and the solver.
+"""SQLAlchemy ORM models of the master-data tables.
 
-Holds the pydantic models exchanged with the solver, the SQLAlchemy ORM
-models of the master-data tables (items and bills of materials), and an
-immutable view of a BOM as an operation consuming and producing materials.
+The master-data tables hold items and bills of materials.
 """
 
-import dataclasses
 import datetime
 import decimal
 import enum
 from typing import Any
 import uuid
 
-import pydantic
 import sqlalchemy as sa
 from sqlalchemy import orm
 from sqlalchemy.dialects import postgresql
-
-
-class ToyInstance(pydantic.BaseModel):
-    """Input to the solver.
-
-    Attributes:
-        a: Objective coefficient of x.
-        b: Objective coefficient of y.
-    """
-
-    a: float
-    b: float
-
-
-class ToySolution(pydantic.BaseModel):
-    """Output of the solver.
-
-    Attributes:
-        status: Solver status, e.g. "OPTIMAL" or "UNBOUNDED".
-        x: Optimal value of x, if an optimum was found.
-        y: Optimal value of y, if an optimum was found.
-        objective: Optimal objective value, if an optimum was found.
-    """
-
-    status: str
-    x: float | None = None
-    y: float | None = None
-    objective: float | None = None
 
 
 class Base(orm.DeclarativeBase):
@@ -344,92 +312,3 @@ class BomOutput(Base):
 
     bom: orm.Mapped[Bom] = orm.relationship(back_populates="outputs")
     item: orm.Mapped[Item] = orm.relationship()
-
-
-@dataclasses.dataclass(frozen=True)
-class OperationMaterial:
-    """A quantity of an item.
-
-    Attributes:
-        qty: The quantity, in the unit of measure of the row it comes from.
-        item: The item.
-    """
-
-    qty: float
-    item: Item
-
-
-@dataclasses.dataclass(frozen=True, init=False)
-class Operation:
-    """An immutable view of a BOM as the materials it produces and consumes.
-
-    Attributes:
-        bom_id: The ID of the BOM.
-        product: The output of the BOM with the primary role.
-        co_products: The outputs of the BOM with the co-product role.
-        by_products: The outputs of the BOM with the by-product role.
-        consumables: The components of the BOM, with their quantities per
-            base quantity of the BOM.
-    """
-
-    bom_id: uuid.UUID
-    product: OperationMaterial
-    co_products: tuple[OperationMaterial, ...]
-    by_products: tuple[OperationMaterial, ...]
-    consumables: tuple[OperationMaterial, ...]
-
-    def __init__(self, bom: Bom) -> None:
-        """Builds the operation of a BOM.
-
-        Args:
-            bom: The BOM; its outputs and components, and their items, must
-                be loaded.
-
-        Raises:
-            ValueError: If the BOM does not have exactly one output with the
-                primary role, or if some component and some output of the
-                BOM have the same item.
-        """
-        outputs: dict[BomOutputRole, list[OperationMaterial]] = {
-            role: [] for role in BomOutputRole
-        }
-        for output in bom.outputs:
-            outputs[output.role].append(
-                OperationMaterial(float(output.qty), output.item)
-            )
-        if len(outputs[BomOutputRole.PRIMARY]) != 1:
-            raise ValueError(
-                f"BOM {bom.bom_id} has"
-                f" {len(outputs[BomOutputRole.PRIMARY])} primary outputs,"
-                " expected 1"
-            )
-        self_consumed = {o.item_id for o in bom.outputs} & {
-            c.item_id for c in bom.components
-        }
-        if self_consumed:
-            codes = sorted(
-                c.item.code
-                for c in bom.components
-                if c.item_id in self_consumed
-            )
-            raise ValueError(
-                f"BOM {bom.bom_id} both consumes and outputs items"
-                f" {', '.join(codes)}"
-            )
-        # The dataclass is frozen, so the fields can only be set this way.
-        object.__setattr__(self, "bom_id", bom.bom_id)
-        object.__setattr__(self, "product", outputs[BomOutputRole.PRIMARY][0])
-        object.__setattr__(
-            self, "co_products", tuple(outputs[BomOutputRole.CO_PRODUCT])
-        )
-        object.__setattr__(
-            self, "by_products", tuple(outputs[BomOutputRole.BY_PRODUCT])
-        )
-        object.__setattr__(
-            self,
-            "consumables",
-            tuple(
-                OperationMaterial(float(c.qty_per_base), c.item)
-                for c in bom.components
-            ),
-        )

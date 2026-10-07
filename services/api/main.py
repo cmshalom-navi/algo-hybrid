@@ -4,7 +4,7 @@ import fastapi
 import pydantic
 
 from common import job_store
-from common import models
+from common import toy_models
 
 app = fastapi.FastAPI()
 
@@ -33,12 +33,12 @@ class JobStatus(pydantic.BaseModel):
 
     job_id: str
     status: str
-    result: models.ToySolution | None = None
+    result: toy_models.ToySolution | None = None
     error: str | None = None
 
 
 @app.post("/jobs", response_model=JobCreated, status_code=202)
-def create_job(request: models.ToyInstance) -> JobCreated:
+def create_job(request: toy_models.ToyInstance) -> JobCreated:
     """Accepts a solve request and queues it for the worker.
 
     Args:

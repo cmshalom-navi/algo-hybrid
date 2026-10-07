@@ -19,7 +19,7 @@ import boto3
 import pydantic
 
 from common import config
-from common import models
+from common import toy_models
 
 STATUS_QUEUED = "QUEUED"
 STATUS_RUNNING = "RUNNING"
@@ -129,7 +129,7 @@ def get_job(job_id: str) -> dict[str, Any] | None:
     return _decimals_to_floats(item) if item is not None else None
 
 
-def get_request(request_s3_key: str) -> models.ToyInstance:
+def get_request(request_s3_key: str) -> toy_models.ToyInstance:
     """Fetches a job's request payload from S3.
 
     Args:
@@ -143,7 +143,7 @@ def get_request(request_s3_key: str) -> models.ToyInstance:
             request.
     """
     obj = _s3().get_object(Bucket=config.JOBS_BUCKET, Key=request_s3_key)
-    return models.ToyInstance.model_validate_json(obj["Body"].read())
+    return toy_models.ToyInstance.model_validate_json(obj["Body"].read())
 
 
 def receive_jobs(
@@ -189,7 +189,7 @@ def mark_running(job_id: str) -> None:
     )
 
 
-def mark_succeeded(job_id: str, solution: models.ToySolution) -> None:
+def mark_succeeded(job_id: str, solution: toy_models.ToySolution) -> None:
     """Sets a job's status to SUCCEEDED and stores its result.
 
     Args:
